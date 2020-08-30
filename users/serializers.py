@@ -5,4 +5,4 @@ from users.models import EcomUser
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = EcomUser
-        fields = ['url', 'email', 'is_staff']
+        fields = ['id', 'url', 'email', 'is_staff','first_name','is_superuser']
