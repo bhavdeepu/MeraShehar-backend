@@ -36,6 +36,7 @@ class Product(models.Model):
                     related_name='pro_modified_by', null=True, blank=True)
     is_trashed = models.BooleanField(default=False)
     is_live = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
 
     category = models.ForeignKey(Categories, on_delete=models.CASCADE, 
             related_name='pro_category')

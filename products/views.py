@@ -27,11 +27,14 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         all_cat = int(self.request.query_params.get("all", 0))
+        cat_id = self.request.query_params.get("cat")
         key = {}
         if not all_cat:
             key['is_live'] = True       
+        if cat_id and cat_id != 'no':
+            key['category_id'] = int(cat_id)
 
-        queryset = Product.objects.filter(**key)
+        queryset = Product.objects.filter(**key).select_related('category','created_by')
 
         return queryset
 
@@ -114,7 +117,7 @@ class CategoriesViewSet(viewsets.ModelViewSet):
         if not all_cat:
             key['is_live'] = True       
 
-        queryset = Categories.objects.filter(**key)
+        queryset = Categories.objects.filter(**key).select_related('created_by','modified_by')
 
         return queryset
 
