@@ -32,8 +32,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         key = {}
         if not all_cat:
             key['is_live'] = True 
-        if futr:
-            key['is_featured'] = True
         if cat_id and cat_id != 'no':
             key['category_id'] = int(cat_id)
         if futr and not(cat_id and cat_id != 'no'):
