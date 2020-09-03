@@ -27,12 +27,16 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         all_cat = int(self.request.query_params.get("all", 0))
+        futr = int(self.request.query_params.get("futr", 0))
         cat_id = self.request.query_params.get("cat")
         key = {}
         if not all_cat:
-            key['is_live'] = True       
+            key['is_live'] = True 
+        if futr:
+            key['is_featured'] = True       
         if cat_id and cat_id != 'no':
             key['category_id'] = int(cat_id)
+            key['is_featured'] = False
 
         queryset = Product.objects.filter(**key).select_related('category','created_by')
 
@@ -57,6 +61,8 @@ class ProductViewSet(viewsets.ModelViewSet):
         if "is_live" in self.request.data.keys():
             key['is_live'] = self.request.data['is_live']
 
+        if "is_featured" in self.request.data.keys():
+            key['is_featured'] = self.request.data['is_featured']
         obj = serializer.save(**key)
         return obj
 
@@ -83,6 +89,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     def change_status(self, request, pk):
         obj = self.get_object()
         obj.is_live = not obj.is_live
+        obj.save()
+        return Response(ProductsSerializer(obj,context={'request': request}).data, status=status.HTTP_200_OK)
+
+    @action(methods=['patch'], detail=True,
+        url_path='change-featured', url_name='change-featured')
+    def change_featured(self, request, pk):
+        obj = self.get_object()
+        obj.is_featured = not obj.is_featured
         obj.save()
         return Response(ProductsSerializer(obj,context={'request': request}).data, status=status.HTTP_200_OK)
 
