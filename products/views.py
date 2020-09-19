@@ -1,4 +1,3 @@
-from products.models import Product, Categories
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -6,8 +5,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.urls import reverse
+from django.db.models import F, Sum
 
-from products.serializers import ProductsSerializer, CategoriesSerializer
+from products.serializers import ProductsSerializer, CategoriesSerializer, CartSerializer
+from products.models import Product, Categories, Cart
+
 from users.permission import IsSuperUserPermission
 from users.serializers import UserSerializer
 from users.models import EcomUser
@@ -18,6 +20,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductsSerializer
     authentication_classes = (TokenAuthentication,)
     # permission_classes = (AllowAny, )
+
+
+    # def get_serializer_context(self):
+    #     return {
+    #         'request': self.request.user
+    #     }
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -111,6 +119,15 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return Response({'option':result,'default':result_final}, status=status.HTTP_200_OK)
 
+    @action(methods=['get'], detail=True,
+        url_path='in-cart', url_name='in_cart')
+    def in_cart(self, request, pk):
+        products = Cart.objects.filter(created_by_id=self.request.user.id).first().product.all().values_list('id',flat=True)
+        if int(pk) in products:
+            return Response({'in_cart':True}, status=status.HTTP_200_OK)
+        return Response({'in_cart':False}, status=status.HTTP_200_OK)
+
+
 
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
@@ -193,3 +210,60 @@ class CategoriesViewSet(viewsets.ModelViewSet):
             result.append({'label':obj[0],'value':obj[1]})
 
         return Response(result, status=status.HTTP_200_OK)
+
+
+class CartViewSet(viewsets.ModelViewSet):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated, )
+
+    def get_queryset(self):
+        queryset = Cart.objects.filter(created_by_id=self.request.user.id).prefetch_related('product')
+        return queryset
+
+    @action(methods=['post'], detail=False,
+        url_path='add', url_name='add')
+    def add_product(self, request):
+
+        try:
+            cart = Cart.objects.get(created_by_id = self.request.user.id)
+        except:
+            cart = Cart(created_by_id = self.request.user.id)
+            cart.save()
+
+        try:
+            product = Product.objects.get(id=self.request.data['product_id'])
+        except:
+            return Response({'success':'False'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart.product.add(Product.objects.get(id=self.request.data['product_id']))
+
+        return Response({'success':'True'}, status=status.HTTP_200_OK)
+
+    @action(methods=['post'], detail=False,
+        url_path='remove', url_name='remove')
+    def remove_product(self, request):
+        try:
+            cart = Cart.objects.get(created_by_id = self.request.user.id)
+            cart.product.remove(Product.objects.get(id=self.request.data['product_id']))
+            return Response({'success':'True'}, status=status.HTTP_200_OK)
+        except:
+            return Response({'success':'False'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['get'], detail=False,
+        url_path='products', url_name='products')
+    def products(self, request):
+        products = Cart.objects.filter(created_by_id=self.request.user.id).first().product
+        sum_all = products.aggregate(price_all=Sum(F('price')))
+        data = {"products":ProductsSerializer(products,many=True).data,"cart_value":sum_all['price_all']}
+        return Response(data, status=status.HTTP_200_OK)
+        
+
+
+
+
+
+
+
+

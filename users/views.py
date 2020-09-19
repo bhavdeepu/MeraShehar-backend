@@ -23,7 +23,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return [AllowAny(),]
 
     def get_serializer_class(self):
-        print ("int o get_serializer_class==",self.action)
+        
         if self.action in ['create']:
             return UserRegisterSerializer
         else:

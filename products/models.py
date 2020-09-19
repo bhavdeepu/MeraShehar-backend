@@ -45,8 +45,16 @@ class Product(models.Model):
     price = models.FloatField(null=True, blank=True)
     image = models.ImageField(default='default.png',blank=True, null=True,upload_to=get_image_filename)
 
+
 class Images(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     images = models.ImageField(default='default.png', blank=True, upload_to=get_image_filename)
+
+
+class Cart(models.Model):
+
+    modified_on = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart_created_by')
+    product = models.ManyToManyField(Product, related_name='cart_product')
 
 
