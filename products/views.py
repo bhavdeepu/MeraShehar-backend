@@ -262,7 +262,7 @@ class CartViewSet(viewsets.ModelViewSet):
     def products(self, request):
         products = Cart.objects.filter(created_by_id=self.request.user.id).first().product
         sum_all = products.aggregate(price_all=Sum(F('price')))
-        data = {"products":ProductsSerializer(products,many=True).data,"cart_value":sum_all['price_all']}
+        data = {"products":ProductsSerializer(products,many=True,context={'request': request}).data,"cart_value":sum_all['price_all']}
         return Response(data, status=status.HTTP_200_OK)
         
 
