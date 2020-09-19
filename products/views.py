@@ -122,7 +122,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(methods=['get'], detail=True,
         url_path='in-cart', url_name='in_cart')
     def in_cart(self, request, pk):
-        products = Cart.objects.filter(created_by_id=self.request.user.id).first().product.all().values_list('id',flat=True)
+        try:
+            products = Cart.objects.get(created_by_id=self.request.user.id)
+        except:
+            products = Cart(created_by_id = self.request.user.id)
+            products.save()
+
+        products = products.product.all().values_list('id',flat=True)
         if int(pk) in products:
             return Response({'in_cart':True}, status=status.HTTP_200_OK)
         return Response({'in_cart':False}, status=status.HTTP_200_OK)
